@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.Intrinsics.X86;
@@ -11,7 +12,10 @@ namespace SimpleDB
     [DataContract]
     public class DB
     {
+        public int PartSize = 1024; 
+
         public event Action<Row> AddRowEvent;
+        public event Action<Row> DeleteRowEvent;
 
         [DataMember]
         public RecordDescription[] RecordDescriptions { get; set; }
@@ -20,13 +24,13 @@ namespace SimpleDB
         public int RowLength { get; set; }
 
         [DataMember]
-        public List<byte[]> Values { get; set; }
+        public byte[][] Values { get; set; }
 
         public DB(params RecordDescription[] recordDescriptions)
         {
             this.RecordDescriptions = recordDescriptions;
             this.RowLength = recordDescriptions.Sum(r => r.Length);
-            Values = new List<byte[]>();
+            Values = new byte[PartSize][];
         }
 
         public int ColumnLength(int colI) => RecordDescriptions[colI].Length;
@@ -65,14 +69,29 @@ namespace SimpleDB
             }
         }
 
+        int curentIndex = 0;
         public Row AddRow()
         {
-            Values.Add(new byte[RowLength]);
-            var index = Values.Count - 1;
-            var row = this[index];
+            if (curentIndex >= Values.Length)
+            {
+                var oldV = Values;
+                Values = new byte[oldV.Length + PartSize][];
+                Array.Copy(oldV, Values, oldV.Length);
+            }
+            Values[curentIndex] = new byte[RowLength];
+            var row = this[curentIndex];
             AddRowEvent?.Invoke(row);
 
+            curentIndex++;
             return row;
+        }
+
+        public void DeleteRow(int rowI)
+        {
+            var row = this[rowI];
+            DeleteRowEvent?.Invoke(row);
+            Values = Values.Where((r, i) => i != rowI).ToArray();
+            GC.Collect();
         }
 
         private string CloumnToString(int rowI, int colI, int length)
@@ -86,7 +105,7 @@ namespace SimpleDB
         {
             var strBuilder = new StringBuilder();
 
-            var columnLength = Values
+            var columnLength = Values.Where(r => r != null)
                 .Select((r, i) => new { 
                     i, 
                     values = RecordDescriptions.Select((c, j) => CloumnToString(i, j, 0)).ToArray() })    
@@ -101,8 +120,8 @@ namespace SimpleDB
 
             strBuilder.AppendLine(string.Join(delimiter, headersNames));
             strBuilder.AppendLine(new string('-', columnLength.Sum(l => l.Value.l)));
- 
-            var sVal = Values
+            
+            var sVal = Values.Where(r => r != null)
                 .Select((r, i) => RecordDescriptions.Select((c, j) => 
                     CloumnToString(i, j, columnLength[j].Value.l)).ToArray())
                 .Select(r => string.Join(delimiter, r))
