@@ -47,5 +47,16 @@ namespace SimpleDB
         {
             db[rowI, colI] = BitConverter.GetBytes(value);
         }
+
+        public static string ToString(byte[] value, RecordTypes type)
+        {
+            switch (type)
+            {
+                case RecordTypes.INT: return BitConverter.ToInt32(value).ToString();
+                case RecordTypes.STRING: return Encoding.UTF8.GetString(value);
+                case RecordTypes.BOOL: return BitConverter.ToBoolean(value).ToString();
+                default: throw new Exception("Тип не реализован");
+            }
+        }
     }
 }

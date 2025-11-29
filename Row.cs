@@ -26,5 +26,20 @@
                 };
             }
         }
+
+        public Column this[string name]
+        {
+            get
+            {
+                var col = Descriptions.FirstOrDefault(d => d.Name.Equals(name));
+                var colI = Array.IndexOf(Descriptions, col);
+                var skip = Descriptions.Take(colI).Sum(c => c.Length);
+                var take = Descriptions[colI].Length;
+                return new Column(rowI, colI, db)
+                {
+                    Description = Descriptions[colI],
+                };
+            }
+        }
     }
 }
