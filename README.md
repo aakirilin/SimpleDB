@@ -1,7 +1,8 @@
 # SimpleDB
 
+The project is an implementation of a simple database stored in memory.
+
 ```C#
-using CStringLib;
 using SimpleDB;
 
 var db = new DB(
