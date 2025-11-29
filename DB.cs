@@ -118,7 +118,6 @@ namespace SimpleDB
             DataContractSerializer s = new DataContractSerializer(typeof(DB));
             using (FileStream fs = File.Open(fileName, FileMode.Create))
             {
-                Console.WriteLine("Testing for type: {0}", typeof(DB));
                 s.WriteObject(fs, this);
             }
         }
