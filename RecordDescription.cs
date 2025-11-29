@@ -1,5 +1,4 @@
-﻿using CStringLib;
-using System.Runtime.Serialization;
+﻿using System.Runtime.Serialization;
 
 namespace SimpleDB
 {

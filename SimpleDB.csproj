@@ -7,8 +7,4 @@
 	<NoWarn>$(NoWarn);SYSLIB0011</NoWarn>
   </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\CStringLib\CStringLib.csproj" />
-  </ItemGroup>
-
 </Project>
