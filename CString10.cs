@@ -1,19 +1,38 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Runtime.Serialization;
 
 namespace SimpleDB
 {
+    [DataContract]
     public struct CString10
     {
+        [IgnoreDataMember]
         public char c0;
+        [IgnoreDataMember]
         public char c1;
+        [IgnoreDataMember]
         public char c2;
+        [IgnoreDataMember]
         public char c3;
+        [IgnoreDataMember]
         public char c4;
+        [IgnoreDataMember]
         public char c5;
+        [IgnoreDataMember]
         public char c6;
+        [IgnoreDataMember]
         public char c7;
+        [IgnoreDataMember]
         public char c8;
+        [IgnoreDataMember]
         public char c9;
+
+        [DataMember]
+        public string Value
+        {
+            get => GetString().Trim(new char());
+            set => SetString(value);
+        }
 
         public char this[int i]
         {

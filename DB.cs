@@ -12,7 +12,7 @@ namespace SimpleDB
     [DataContract]
     public class DB
     {
-        public int PartSize = 1024; 
+        public int PartSize = 1024;
 
         public event Action<Row> AddRowEvent;
         public event Action<Row> DeleteRowEvent;
@@ -26,11 +26,15 @@ namespace SimpleDB
         [DataMember]
         public byte[][] Values { get; set; }
 
+        private List<int> deletedRows;
+
         public DB(params RecordDescription[] recordDescriptions)
         {
             this.RecordDescriptions = recordDescriptions;
             this.RowLength = recordDescriptions.Sum(r => r.Length);
             Values = new byte[PartSize][];
+
+            deletedRows = new List<int>();
         }
 
         public int ColumnLength(int colI) => RecordDescriptions[colI].Length;
@@ -88,9 +92,16 @@ namespace SimpleDB
 
         public void DeleteRow(int rowI)
         {
+            deletedRows.Add(rowI);
             var row = this[rowI];
             DeleteRowEvent?.Invoke(row);
-            Values = Values.Where((r, i) => i != rowI).ToArray();
+        }
+
+        public void Compress()
+        {
+            Values = Values
+                .Where((r, i) => r != null && !deletedRows.Contains(i)).ToArray();
+            deletedRows.Clear();
             GC.Collect();
         }
 
@@ -106,9 +117,10 @@ namespace SimpleDB
             var strBuilder = new StringBuilder();
 
             var columnLength = Values.Where(r => r != null)
-                .Select((r, i) => new { 
-                    i, 
-                    values = RecordDescriptions.Select((c, j) => CloumnToString(i, j, 0)).ToArray() })    
+                .Select((r, i) => new {
+                    i,
+                    values = RecordDescriptions.Select((c, j) => CloumnToString(i, j, 0)).ToArray()
+                })
                 .SelectMany(v => v.values.Select((c, j) => new { v.i, j, l = c.Length > 10 ? c.Length : 10 }))
                 .GroupBy(v => v.j)
                 .ToDictionary(v => v.Key, v => new { v.Key, l = v.Max(c => c.l) })
@@ -120,16 +132,16 @@ namespace SimpleDB
 
             strBuilder.AppendLine(string.Join(delimiter, headersNames));
             strBuilder.AppendLine(new string('-', columnLength.Sum(l => l.Value.l)));
-            
+
             var sVal = Values.Where(r => r != null)
-                .Select((r, i) => RecordDescriptions.Select((c, j) => 
+                .Select((r, i) => RecordDescriptions.Select((c, j) =>
                     CloumnToString(i, j, columnLength[j].Value.l)).ToArray())
                 .Select(r => string.Join(delimiter, r))
                 .ToList();
 
             sVal.ForEach(r => strBuilder.AppendLine(r));
 
-            return strBuilder.ToString();   
+            return strBuilder.ToString();
         }
 
         public void Save(string fileName)
