@@ -12,14 +12,20 @@ var db = new DB(
 );
 
 
-for (int i = 0; i < 1000; i++)
+for (int i = 0; i < 20; i++)
 {
     var row0 = db.AddRow();
 
-    row0["c1"].SetString("Hello world! 1 12");
-    row0["c2"].SetInt(150);
+    row0["c1"].SetString("Hello world! " + i);
+    row0["c2"].SetInt(i);
     row0["c3"].SetBool(true);
+    row0["c4"].SetInt(i * 100);
 }
+
+db.DeleteRow(2);
+db.DeleteRow(5);
+db.DeleteRow(10);
+
 
 var fileName = "db.xml";
 db.Save(fileName);
